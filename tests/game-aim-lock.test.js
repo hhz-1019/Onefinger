@@ -101,8 +101,32 @@ test('keeps the locked aim angle when a fist shifts the palm center', () => {
 
   assert.equal(shots.length, 1);
   assert.equal(shots[0].power, 0.72);
-  assert.equal(shots[0].angle, 0);
+  assert.equal(shots[0].angle, Math.PI);
   assert.equal(game._aimLocked, false);
+});
+
+test('aims the cue ball toward the palm target point', () => {
+  const { game, shots } = makeGame(
+    [
+      { x: 700, y: 400 },
+      { x: 700, y: 400 },
+      { x: 700, y: 400 },
+      { x: 650, y: 430 },
+    ],
+    [null, null, null, 0.72],
+  );
+
+  now = 0;
+  game._processCameraInput();
+  now = 1000;
+  game._processCameraInput();
+  now = 2000;
+  game._processCameraInput();
+  now = 2100;
+  game._processCameraInput();
+
+  assert.equal(shots.length, 1);
+  assert.equal(shots[0].angle, 0);
 });
 
 test('ignores a fist shot before the aim has locked', () => {

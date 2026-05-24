@@ -404,8 +404,8 @@ class Game {
       }
 
       if (!this._aimLocked) {
-        // Aim = direction from palm toward ball until the palm has held steady.
-        this.aimAngle = Utils.angle(fp.x, fp.y, this.cueBall.x, this.cueBall.y);
+        // Camera aim: palm is the target point the cue ball should travel toward.
+        this.aimAngle = Utils.angle(this.cueBall.x, this.cueBall.y, fp.x, fp.y);
       }
       this._updateAimLock(fp, performance.now());
 
@@ -505,10 +505,8 @@ class Game {
 
     // Cue stick
     if (canAim) {
-      // Camera mode: pass fingerPos so cue grip is AT the finger
-      const aimControlPos = this._aimLocked && this._aimLockPos ? this._aimLockPos : this._fingerPos;
-      const gripPos = (this.camera.enabled && aimControlPos) ? aimControlPos : null;
-      r.drawCue(this.cueBall, this.aimAngle, this.pullback, gripPos);
+      // Camera mode treats the palm as a target point, so keep the cue anchored at the ball.
+      r.drawCue(this.cueBall, this.aimAngle, this.pullback, null);
       if (this.aimPower > 0.02) r.drawPowerArc(this.cueBall, this.aimAngle, this.aimPower);
     }
 

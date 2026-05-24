@@ -159,7 +159,7 @@ class Renderer {
    * TOUCH mode  (fingerPos = null)
    *   Classic: cue extends from near-ball backward with pullback gap.
    *
-   * CAMERA mode (fingerPos supplied)
+   * Optional floating-cue mode (fingerPos supplied)
    *   The cue is a FIXED-LENGTH stick. The GRIP POINT (65% from tip)
    *   is pinned to the finger position. The cue always points from the
    *   finger toward the ball. The WHOLE STICK moves freely with the finger
@@ -523,7 +523,7 @@ class Renderer {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = 'rgba(180,180,180,0.7)';
-    ctx.fillText('停稳手掌锁定瞄准  握拳击球  或直接触摸拖拽', W / 2, H * 0.84);
+    ctx.fillText('手往哪边白球往哪边  停稳锁定  握拳击球', W / 2, H * 0.84);
     ctx.fillText(`限时 ${CONFIG.TIME_LIMIT} 秒  用最少杆数清台`, W / 2, H * 0.89);
     ctx.restore();
 
@@ -706,7 +706,7 @@ class Renderer {
       ctx.fillText('请将手掌举在摄像头前方', W / 2 + 14, pillY + pillH * 0.38);
       ctx.font = `${Math.min(12, Math.round(W * 0.028))}px "PingFang SC", Arial`;
       ctx.fillStyle = 'rgba(160,210,255,0.7)';
-      ctx.fillText('停稳 2 秒锁定瞄准，锁定后握拳击球', W / 2 + 14, pillY + pillH * 0.7);
+      ctx.fillText('手掌指向白球要去的位置，停稳后握拳击球', W / 2 + 14, pillY + pillH * 0.7);
       ctx.restore();
       return;
     }
@@ -797,10 +797,10 @@ class Renderer {
       ctx.textBaseline = 'middle';
       ctx.font = `bold ${Math.min(16, Math.round(W * 0.036))}px "PingFang SC", Arial`;
       ctx.fillStyle = aimLocked ? '#bff4ff' : '#fff2c8';
-      ctx.fillText(aimLocked ? '瞄准已锁定' : '停稳 2 秒锁定瞄准', W / 2, pillY + 22);
+      ctx.fillText(aimLocked ? '目标方向已锁定' : '停稳 2 秒锁定方向', W / 2, pillY + 22);
       ctx.font = `${Math.min(13, Math.round(W * 0.026))}px "PingFang SC", Arial`;
       ctx.fillStyle = aimLocked ? 'rgba(190,240,255,0.72)' : 'rgba(255,236,190,0.72)';
-      ctx.fillText(aimLocked ? '握拳击球' : '锁定后握拳击球', W / 2, pillY + 40);
+      ctx.fillText(aimLocked ? '握拳击球' : '手往哪边，白球就往哪边打', W / 2, pillY + 40);
       ctx.restore();
     }
 
@@ -988,7 +988,7 @@ class Renderer {
     ctx.textBaseline = 'middle';
     ctx.font         = `${Math.round(W * 0.03)}px "PingFang SC", Arial`;
     ctx.fillStyle    = 'rgba(140,160,180,0.55)';
-    ctx.fillText('识别后自动进入游戏  ·  停稳 2 秒锁定瞄准  ·  握拳击球', W / 2, H * 0.9);
+    ctx.fillText('识别后自动进入游戏  ·  手掌指向目标方向  ·  握拳击球', W / 2, H * 0.9);
     ctx.restore();
   }
 
