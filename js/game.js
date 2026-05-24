@@ -1,7 +1,8 @@
 'use strict';
 
 const AIM_LOCK_HOLD_MS = 2000;
-const AIM_LOCK_MOVE_TOLERANCE = 34;
+const AIM_LOCK_MOVE_TOLERANCE = 48;
+const AIM_ASSIST_MAX_ANGLE = 0.24;
 
 class Game {
   constructor() {
@@ -46,6 +47,7 @@ class Game {
     this._aimLockStartedAt   = 0;
     this._aimLockProgress    = 0;
     this._aimLockAngle       = 0;
+    this._aimAssistActive    = false;
 
     // Calibration (CALIBRATE state)
     this._calibProgress = 0;   // 0 → 1 (fills as finger is held steady)
@@ -345,6 +347,68 @@ class Game {
     this._aimLockStartedAt = 0;
     this._aimLockProgress = 0;
     this._aimLockAngle = this.aimAngle || 0;
+    this._aimAssistActive = false;
+  }
+
+  _angleDelta(a, b) {
+    return Math.atan2(Math.sin(a - b), Math.cos(a - b));
+  }
+
+  _pointSegmentDistance(px, py, ax, ay, bx, by) {
+    const vx = bx - ax, vy = by - ay;
+    const lenSq = vx * vx + vy * vy;
+    if (lenSq === 0) return Utils.dist(px, py, ax, ay);
+    const t = Utils.clamp(((px - ax) * vx + (py - ay) * vy) / lenSq, 0, 1);
+    return Utils.dist(px, py, ax + vx * t, ay + vy * t);
+  }
+
+  _isPathBlocked(ax, ay, bx, by, ignoredBalls = []) {
+    const ignored = new Set(ignoredBalls);
+    const r = this.cueBall?.r || this.tableRect?.ballRadius || 10;
+    for (const b of this.balls || []) {
+      if (!b || b.pocketed || ignored.has(b)) continue;
+      const d = this._pointSegmentDistance(b.x, b.y, ax, ay, bx, by);
+      if (d < r * 1.85) return true;
+    }
+    return false;
+  }
+
+  _assistAimAngle(rawAngle) {
+    if (!this.cueBall || !this.balls || !this.pockets) {
+      return rawAngle;
+    }
+
+    const r = this.cueBall.r || this.tableRect?.ballRadius || 10;
+    let best = null;
+
+    for (const target of this.balls) {
+      if (!target || target === this.cueBall || target.pocketed) continue;
+      for (const pocket of this.pockets) {
+        const toPocketX = pocket.x - target.x;
+        const toPocketY = pocket.y - target.y;
+        const toPocketLen = Math.hypot(toPocketX, toPocketY);
+        if (toPocketLen < r * 3) continue;
+
+        const ux = toPocketX / toPocketLen;
+        const uy = toPocketY / toPocketLen;
+        const contactX = target.x - ux * r * 2;
+        const contactY = target.y - uy * r * 2;
+        const assistedAngle = Utils.angle(this.cueBall.x, this.cueBall.y, contactX, contactY);
+        const angleError = Math.abs(this._angleDelta(rawAngle, assistedAngle));
+        if (angleError > AIM_ASSIST_MAX_ANGLE) continue;
+
+        if (this._isPathBlocked(this.cueBall.x, this.cueBall.y, contactX, contactY, [this.cueBall, target])) continue;
+        if (this._isPathBlocked(target.x, target.y, pocket.x, pocket.y, [this.cueBall, target])) continue;
+
+        const score = angleError + Utils.dist(this.cueBall.x, this.cueBall.y, target.x, target.y) * 0.00005;
+        if (!best || score < best.score) {
+          best = { angle: assistedAngle, score };
+        }
+      }
+    }
+
+    this._aimAssistActive = !!best;
+    return best ? best.angle : rawAngle;
   }
 
   _updateAimLock(fp, now) {
@@ -405,7 +469,8 @@ class Game {
 
       if (!this._aimLocked) {
         // Camera aim: palm is the target point the cue ball should travel toward.
-        this.aimAngle = Utils.angle(this.cueBall.x, this.cueBall.y, fp.x, fp.y);
+        const rawAngle = Utils.angle(this.cueBall.x, this.cueBall.y, fp.x, fp.y);
+        this.aimAngle = this._assistAimAngle(rawAngle);
       }
       this._updateAimLock(fp, performance.now());
 
@@ -524,7 +589,8 @@ class Game {
       // Guide (waiting / flash)
       r.drawCameraGuide(!!this._fingerPos, this._fingerEverDetected,
                         this._fingerDetectedAt, this.animT, W, H,
-                        this._aimLockProgress, this._aimLocked);
+                        this._aimLockProgress, this._aimLocked,
+                        this._aimAssistActive);
 
       // Finger cursor
       const cursorPos = this._aimLocked && this._aimLockPos ? this._aimLockPos : this._fingerPos;

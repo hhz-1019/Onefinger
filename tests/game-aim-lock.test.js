@@ -23,6 +23,11 @@ const sandbox = {
     clamp(v, min, max) {
       return Math.max(min, Math.min(max, v));
     },
+    dist(x1, y1, x2, y2) {
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      return Math.sqrt(dx * dx + dy * dy);
+    },
   },
   window: {
     addEventListener() {},
@@ -61,7 +66,9 @@ function makeGame(frames, shotFrames = []) {
     processFrame() { return frames.shift() || null; },
     detectShot() { return shotFrames.shift() ?? null; },
   };
-  game.cueBall = { x: 500, y: 400, pocketed: false };
+  game.cueBall = { x: 500, y: 400, r: 10, pocketed: false };
+  game.balls = [game.cueBall];
+  game.pockets = [];
   game._anyMoving = () => false;
   game._fireShot = (angle, power) => shots.push({ angle, power });
   game._fingerPos = null;
@@ -127,6 +134,33 @@ test('aims the cue ball toward the palm target point', () => {
 
   assert.equal(shots.length, 1);
   assert.equal(shots[0].angle, 0);
+});
+
+test('snaps near palm aim to a clear potting line on small screens', () => {
+  const { game, shots } = makeGame(
+    [
+      { x: 710, y: 430 },
+      { x: 710, y: 430 },
+      { x: 710, y: 430 },
+      { x: 690, y: 435 },
+    ],
+    [null, null, null, 0.72],
+  );
+  game.balls.push({ x: 650, y: 400, r: 10, pocketed: false });
+  game.pockets = [{ x: 900, y: 400, r: 28 }];
+
+  now = 0;
+  game._processCameraInput();
+  now = 1000;
+  game._processCameraInput();
+  now = 2000;
+  game._processCameraInput();
+  now = 2100;
+  game._processCameraInput();
+
+  assert.equal(shots.length, 1);
+  assert.equal(shots[0].angle, 0);
+  assert.equal(game._aimAssistActive, false);
 });
 
 test('ignores a fist shot before the aim has locked', () => {

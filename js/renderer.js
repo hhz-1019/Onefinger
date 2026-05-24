@@ -655,7 +655,7 @@ class Renderer {
    * @param {number}  animT          - global animation time (seconds)
    * @param {number}  W, H           - canvas dimensions
    */
-  drawCameraGuide(fingerPresent, everDetected, detectedAt, animT, W, H, lockProgress = 0, aimLocked = false) {
+  drawCameraGuide(fingerPresent, everDetected, detectedAt, animT, W, H, lockProgress = 0, aimLocked = false, aimAssistActive = false) {
     const ctx = this.ctx;
     const now = performance.now();
 
@@ -797,10 +797,10 @@ class Renderer {
       ctx.textBaseline = 'middle';
       ctx.font = `bold ${Math.min(16, Math.round(W * 0.036))}px "PingFang SC", Arial`;
       ctx.fillStyle = aimLocked ? '#bff4ff' : '#fff2c8';
-      ctx.fillText(aimLocked ? '目标方向已锁定' : '停稳 2 秒锁定方向', W / 2, pillY + 22);
+      ctx.fillText(aimLocked ? '目标方向已锁定' : (aimAssistActive ? '已辅助贴近进球线' : '停稳 2 秒锁定方向'), W / 2, pillY + 22);
       ctx.font = `${Math.min(13, Math.round(W * 0.026))}px "PingFang SC", Arial`;
       ctx.fillStyle = aimLocked ? 'rgba(190,240,255,0.72)' : 'rgba(255,236,190,0.72)';
-      ctx.fillText(aimLocked ? '握拳击球' : '手往哪边，白球就往哪边打', W / 2, pillY + 40);
+      ctx.fillText(aimLocked ? '握拳击球' : (aimAssistActive ? '停稳锁定后握拳击球' : '手往哪边，白球就往哪边打'), W / 2, pillY + 40);
       ctx.restore();
     }
 
@@ -988,7 +988,7 @@ class Renderer {
     ctx.textBaseline = 'middle';
     ctx.font         = `${Math.round(W * 0.03)}px "PingFang SC", Arial`;
     ctx.fillStyle    = 'rgba(140,160,180,0.55)';
-    ctx.fillText('识别后自动进入游戏  ·  手掌指向目标方向  ·  握拳击球', W / 2, H * 0.9);
+    ctx.fillText('识别后自动进入游戏  ·  自动辅助瞄准  ·  握拳击球', W / 2, H * 0.9);
     ctx.restore();
   }
 
