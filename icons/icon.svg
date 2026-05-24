@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="一指清台">
+  <defs>
+    <radialGradient id="felt" cx="50%" cy="42%" r="72%">
+      <stop offset="0%" stop-color="#2fe27b"/>
+      <stop offset="55%" stop-color="#118744"/>
+      <stop offset="100%" stop-color="#073820"/>
+    </radialGradient>
+    <linearGradient id="wood" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f0b662"/>
+      <stop offset="55%" stop-color="#9a5b24"/>
+      <stop offset="100%" stop-color="#542b12"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="116" fill="#0d1117"/>
+  <rect x="62" y="86" width="388" height="290" rx="48" fill="url(#wood)"/>
+  <rect x="92" y="116" width="328" height="230" rx="32" fill="url(#felt)"/>
+  <circle cx="116" cy="138" r="24" fill="#05070a"/>
+  <circle cx="396" cy="138" r="24" fill="#05070a"/>
+  <circle cx="116" cy="324" r="24" fill="#05070a"/>
+  <circle cx="396" cy="324" r="24" fill="#05070a"/>
+  <circle cx="246" cy="242" r="28" fill="#f8fafc"/>
+  <circle cx="314" cy="204" r="24" fill="#ff4c6a"/>
+  <circle cx="338" cy="262" r="24" fill="#ffd24d"/>
+  <path d="M172 411c28-78 86-127 170-149" fill="none" stroke="#f6e4bd" stroke-width="18" stroke-linecap="round"/>
+  <path d="M173 411c-9 28 8 44 36 34 23-8 33-33 20-54" fill="#f4c7b8"/>
+  <path d="M207 421c31-61 82-101 153-119" fill="none" stroke="#3a2312" stroke-width="8" stroke-linecap="round" opacity=".35"/>
+</svg>

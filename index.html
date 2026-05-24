@@ -2,11 +2,22 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0d1117" />
+  <meta name="color-scheme" content="dark" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="一指清台" />
   <title>一指清台</title>
   <meta name="description" content="一指清台 - 隔空手势台球游戏，用摄像头追踪手指，隔空击球清台！" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="一指清台" />
+  <meta property="og:description" content="打开手机摄像头，用一根手指隔空挥杆清台。" />
+  <meta property="og:image" content="https://hhz-1019.github.io/Onefinger/project-gameplay-screenshot.png" />
+  <meta property="og:url" content="https://hhz-1019.github.io/Onefinger/" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
   <style>
     *, *::before, *::after {
       margin: 0; padding: 0; box-sizing: border-box;
@@ -80,6 +91,12 @@
     <div class="msg">哎呀，出错了，请重启试试吧~</div>
     <button onclick="location.reload()">重新启动</button>
   </div>
+  <noscript>
+    <div id="errorOverlay" style="display:flex">
+      <div class="emoji">🎱</div>
+      <div class="msg">请开启 JavaScript 后再体验一指清台。</div>
+    </div>
+  </noscript>
 
   <!-- Load order matters: config → utils → ball → renderer → camera → game -->
   <script src="./js/config.js"></script>
@@ -89,6 +106,13 @@
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
   <script src="./js/camera.js"></script>
   <script src="./js/game.js"></script>
+  <script>
+    if ('serviceWorker' in navigator && window.isSecureContext) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+  </script>
 
 </body>
 </html>
