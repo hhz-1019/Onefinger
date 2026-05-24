@@ -96,6 +96,22 @@ test('maps MediaPipe index fingertip landmarks to mirrored screen coordinates', 
   assert.equal(tracker.fingerPos.y, 200);
 });
 
+test('uses skin detection fallback while MediaPipe has not found a full hand', () => {
+  const tracker = new CameraTracker();
+  tracker.enabled = true;
+  tracker.video = { readyState: 2 };
+  tracker.handTrackingReady = true;
+  tracker.hands = { send() {} };
+  tracker._processSkinFrame = () => tracker._setFingerPosition({ x: 360, y: 180 });
+
+  const pos = tracker.processFrame(720, 360);
+
+  assert.equal(pos.x, 360);
+  assert.equal(pos.y, 180);
+  assert.equal(tracker.fingerPos.x, 360);
+  assert.equal(tracker.fingerPos.y, 180);
+});
+
 test('detects a cue stroke only after pullback followed by a forward thrust', () => {
   const tracker = new CameraTracker();
 

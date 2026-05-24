@@ -118,7 +118,8 @@ class CameraTracker {
 
     if (this.handTrackingReady) {
       this._queueHandFrame();
-      return this.fingerPos;
+      const skinPos = this._processSkinFrame(screenW, screenH);
+      return this.fingerPos || skinPos;
     }
 
     return this._processSkinFrame(screenW, screenH);
