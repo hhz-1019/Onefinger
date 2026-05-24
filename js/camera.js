@@ -7,10 +7,12 @@ class CameraTracker {
     this.offCtx = this.offCanvas.getContext('2d', { willReadFrequently: true });
     this.enabled = false;
 
-    // Public finger state
+    // Public control-point state. In camera mode this is the palm center;
+    // in skin fallback mode it is the detected skin centroid.
     this.fingerPos = null;       // {x, y} in screen coords
     this.prevPos = null;
     this.velocity = { x: 0, y: 0 };
+    this.isFist = false;
 
     // Stroke (out-cue) mechanics
     this._pullback = 0;          // current pullback distance (px)
@@ -21,6 +23,7 @@ class CameraTracker {
     this._noFingerFrames = 0;    // consecutive frames without finger
     this._positionVersion = 0;
     this._strokeVersion = 0;
+    this._fistShotQueued = false;
 
     this._frameW = 160;
     this._frameH = 120;
@@ -148,7 +151,7 @@ class CameraTracker {
       return;
     }
 
-    this._updateFingerFromLandmarks(landmarks, this._screenW, this._screenH);
+    this._updateHandFromLandmarks(landmarks, this._screenW, this._screenH);
   }
 
   _updateFingerFromLandmarks(landmarks, screenW, screenH) {
@@ -158,6 +161,65 @@ class CameraTracker {
     const x = (1 - Utils.clamp(tip.x, 0, 1)) * screenW;
     const y = Utils.clamp(tip.y, 0, 1) * screenH;
     return this._setFingerPosition({ x, y });
+  }
+
+  _updateHandFromLandmarks(landmarks, screenW, screenH) {
+    if (!landmarks || !screenW || !screenH) return null;
+    const palmIndexes = [0, 5, 9, 13, 17];
+    const palmPoints = palmIndexes
+      .map(index => landmarks[index])
+      .filter(Boolean);
+    if (palmPoints.length < 3) return null;
+
+    const palm = palmPoints.reduce((acc, point) => ({
+      x: acc.x + point.x,
+      y: acc.y + point.y,
+    }), { x: 0, y: 0 });
+    palm.x /= palmPoints.length;
+    palm.y /= palmPoints.length;
+
+    this._setFistState(this._detectFist(landmarks, palm));
+
+    return this._setFingerPosition({
+      x: (1 - Utils.clamp(palm.x, 0, 1)) * screenW,
+      y: Utils.clamp(palm.y, 0, 1) * screenH,
+    });
+  }
+
+  _detectFist(landmarks, palm) {
+    const palmBase = palm || this._averageLandmarks(landmarks, [0, 5, 9, 13, 17]);
+    if (!palmBase) return false;
+    const palmRefs = [5, 9, 13, 17].map(index => landmarks[index]).filter(Boolean);
+    const tips = [8, 12, 16, 20].map(index => landmarks[index]).filter(Boolean);
+    if (palmRefs.length < 3 || tips.length < 3) return false;
+
+    const palmRadius = palmRefs.reduce((sum, point) => sum + this._landmarkDistance(point, palmBase), 0) / palmRefs.length;
+    const tipDistance = tips.reduce((sum, point) => sum + this._landmarkDistance(point, palmBase), 0) / tips.length;
+    return tipDistance < palmRadius * 1.25;
+  }
+
+  _averageLandmarks(landmarks, indexes) {
+    const points = indexes.map(index => landmarks[index]).filter(Boolean);
+    if (!points.length) return null;
+    const total = points.reduce((acc, point) => ({
+      x: acc.x + point.x,
+      y: acc.y + point.y,
+    }), { x: 0, y: 0 });
+    return { x: total.x / points.length, y: total.y / points.length };
+  }
+
+  _landmarkDistance(a, b) {
+    const dx = a.x - b.x;
+    const dy = a.y - b.y;
+    return Math.hypot(dx, dy);
+  }
+
+  _setFistState(isFist) {
+    const closedNow = Boolean(isFist);
+    if (closedNow && !this.isFist && this._shotCooldown <= 0) {
+      this._fistShotQueued = true;
+    }
+    this.isFist = closedNow;
   }
 
   _setFingerPosition(pos) {
@@ -187,6 +249,8 @@ class CameraTracker {
       this._pullback = 0;
       this._maxPullback = 0;
       this._lastAxialVel = 0;
+      this.isFist = false;
+      this._fistShotQueued = false;
     }
     return null;
   }
@@ -257,6 +321,14 @@ class CameraTracker {
    */
   detectShot() {
     if (this._shotCooldown > 0) { this._shotCooldown--; return null; }
+    if (this._fistShotQueued) {
+      this._fistShotQueued = false;
+      this._pullback = 0;
+      this._maxPullback = 0;
+      this._lastAxialVel = 0;
+      this._shotCooldown = 35;
+      return 0.72;
+    }
     if (!this.fingerPos || !this.prevPos) return null;
 
     // Strike = fast forward motion AND had a meaningful pullback

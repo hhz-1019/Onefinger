@@ -1,7 +1,7 @@
 {
   "name": "一指清台",
   "short_name": "一指清台",
-  "description": "用手机摄像头追踪手指，隔空挥杆清台的体感台球小游戏。",
+  "description": "用手机摄像头追踪手掌，移动瞄准，握拳击球清台的体感台球小游戏。",
   "lang": "zh-CN",
   "start_url": "./",
   "scope": "./",

@@ -523,7 +523,7 @@ class Renderer {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = 'rgba(180,180,180,0.7)';
-    ctx.fillText('开启摄像头  隔空挥杆  或直接触摸拖拽', W / 2, H * 0.84);
+    ctx.fillText('张开手掌瞄准  握拳击球  或直接触摸拖拽', W / 2, H * 0.84);
     ctx.fillText(`限时 ${CONFIG.TIME_LIMIT} 秒  用最少杆数清台`, W / 2, H * 0.89);
     ctx.restore();
 
@@ -699,10 +699,10 @@ class Renderer {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = '#c8e8ff';
-      ctx.fillText('请将手指举在摄像头前方', W / 2 + 14, pillY + pillH * 0.38);
+      ctx.fillText('请将手掌举在摄像头前方', W / 2 + 14, pillY + pillH * 0.38);
       ctx.font = `${Math.round(W * 0.028)}px "PingFang SC", Arial`;
       ctx.fillStyle = 'rgba(160,210,255,0.7)';
-      ctx.fillText('后拉手指蓄力，快速前推即可击球', W / 2 + 14, pillY + pillH * 0.7);
+      ctx.fillText('移动手掌瞄准，握拳即可击球', W / 2 + 14, pillY + pillH * 0.7);
       ctx.restore();
       return;
     }
@@ -748,7 +748,7 @@ class Renderer {
       ctx.fillStyle = '#aaffc8';
       ctx.shadowColor = 'rgba(80,255,130,0.4)';
       ctx.shadowBlur  = 8;
-      ctx.fillText('✅ 感应到手指！', W / 2, pillY + pillH / 2);
+      ctx.fillText('✅ 感应到手掌！', W / 2, pillY + pillH / 2);
       ctx.restore();
     }
 
@@ -910,7 +910,7 @@ class Renderer {
       ctx.fillStyle   = '#66ddff';
       ctx.shadowColor = 'rgba(60,160,255,0.4)';
       ctx.shadowBlur  = 10;
-      ctx.fillText('✓ 检测到手指，保持不动…', W / 2, textY);
+      ctx.fillText('✓ 检测到手掌，保持不动…', W / 2, textY);
       // Progress percentage
       ctx.font      = `${Math.round(W * 0.036)}px Arial`;
       ctx.fillStyle = 'rgba(100,210,255,0.7)';
@@ -923,11 +923,11 @@ class Renderer {
       ctx.fillStyle   = `rgba(160,210,255,${pulse})`;
       ctx.shadowColor = `rgba(60,140,255,${pulse * 0.4})`;
       ctx.shadowBlur  = 12;
-      ctx.fillText('请将手指举在摄像头前方', W / 2, textY);
+      ctx.fillText('请将手掌举在摄像头前方', W / 2, textY);
       ctx.font      = `${Math.round(W * 0.032)}px "PingFang SC", Arial`;
       ctx.fillStyle = `rgba(120,180,230,${pulse * 0.7})`;
       ctx.shadowBlur = 0;
-      ctx.fillText('👆  举起食指，靠近前置摄像头', W / 2, textY + 34);
+      ctx.fillText('✋  张开手掌，靠近前置摄像头', W / 2, textY + 34);
     }
     ctx.restore();
 
@@ -937,7 +937,7 @@ class Renderer {
     ctx.textBaseline = 'middle';
     ctx.font         = `${Math.round(W * 0.03)}px "PingFang SC", Arial`;
     ctx.fillStyle    = 'rgba(140,160,180,0.55)';
-    ctx.fillText('识别后自动进入游戏  ·  后拉手指蓄力  ·  快速前推击球', W / 2, H * 0.9);
+    ctx.fillText('识别后自动进入游戏  ·  移动手掌瞄准  ·  握拳击球', W / 2, H * 0.9);
     ctx.restore();
   }
 

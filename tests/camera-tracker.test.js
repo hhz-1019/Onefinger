@@ -67,12 +67,40 @@ vm.runInContext(
 
 const CameraTracker = sandbox.CameraTracker;
 
-function makeLandmarks(indexTip) {
+function makeLandmarks(overrides = {}) {
   return Array.from({ length: 21 }, (_, i) => ({
-    x: i === 8 ? indexTip.x : 0.5,
-    y: i === 8 ? indexTip.y : 0.5,
-    z: 0,
+    x: overrides[i]?.x ?? 0.5,
+    y: overrides[i]?.y ?? 0.5,
+    z: overrides[i]?.z ?? 0,
   }));
+}
+
+function makeOpenHandLandmarks() {
+  return makeLandmarks({
+    0: { x: 0.5, y: 0.78 },
+    5: { x: 0.38, y: 0.56 },
+    9: { x: 0.5, y: 0.52 },
+    13: { x: 0.62, y: 0.56 },
+    17: { x: 0.72, y: 0.62 },
+    8: { x: 0.34, y: 0.20 },
+    12: { x: 0.5, y: 0.16 },
+    16: { x: 0.66, y: 0.21 },
+    20: { x: 0.78, y: 0.30 },
+  });
+}
+
+function makeFistLandmarks() {
+  return makeLandmarks({
+    0: { x: 0.5, y: 0.78 },
+    5: { x: 0.38, y: 0.56 },
+    9: { x: 0.5, y: 0.52 },
+    13: { x: 0.62, y: 0.56 },
+    17: { x: 0.72, y: 0.62 },
+    8: { x: 0.43, y: 0.58 },
+    12: { x: 0.51, y: 0.57 },
+    16: { x: 0.59, y: 0.59 },
+    20: { x: 0.67, y: 0.62 },
+  });
 }
 
 function test(name, fn) {
@@ -85,15 +113,16 @@ function test(name, fn) {
   }
 }
 
-test('maps MediaPipe index fingertip landmarks to mirrored screen coordinates', () => {
+test('maps MediaPipe palm landmarks to mirrored screen coordinates', () => {
   const tracker = new CameraTracker();
 
-  const pos = tracker._updateFingerFromLandmarks(makeLandmarks({ x: 0.2, y: 0.4 }), 1000, 500);
+  const pos = tracker._updateHandFromLandmarks(makeOpenHandLandmarks(), 1000, 500);
 
-  assert.equal(pos.x, 800);
-  assert.equal(pos.y, 200);
-  assert.equal(tracker.fingerPos.x, 800);
-  assert.equal(tracker.fingerPos.y, 200);
+  assert.equal(Math.round(pos.x), 456);
+  assert.equal(Math.round(pos.y), 304);
+  assert.equal(Math.round(tracker.fingerPos.x), 456);
+  assert.equal(Math.round(tracker.fingerPos.y), 304);
+  assert.equal(tracker.isFist, false);
 });
 
 test('uses skin detection fallback while MediaPipe has not found a full hand', () => {
@@ -131,4 +160,18 @@ test('detects a cue stroke only after pullback followed by a forward thrust', ()
   tracker.updateStroke(0);
 
   assert.equal(tracker.detectShot(), 0.5333333333333333);
+});
+
+test('detects a fist close as a camera shot trigger', () => {
+  const tracker = new CameraTracker();
+
+  tracker._updateHandFromLandmarks(makeOpenHandLandmarks(), 1000, 500);
+  assert.equal(tracker.isFist, false);
+  assert.equal(tracker.detectShot(), null);
+
+  tracker._updateHandFromLandmarks(makeFistLandmarks(), 1000, 500);
+
+  assert.equal(tracker.isFist, true);
+  assert.equal(tracker.detectShot(), 0.72);
+  assert.equal(tracker.detectShot(), null);
 });
