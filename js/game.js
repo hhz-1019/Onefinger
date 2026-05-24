@@ -1,5 +1,8 @@
 'use strict';
 
+const AIM_LOCK_HOLD_MS = 2000;
+const AIM_LOCK_MOVE_TOLERANCE = 34;
+
 class Game {
   constructor() {
     this.canvas  = document.getElementById('gameCanvas');
@@ -38,6 +41,11 @@ class Game {
     this._fingerEverDetected = false;
     this._fingerDetectedAt   = 0;
     this._fingerRippleT      = 1;
+    this._aimLocked          = false;
+    this._aimLockPos         = null;
+    this._aimLockStartedAt   = 0;
+    this._aimLockProgress    = 0;
+    this._aimLockAngle       = 0;
 
     // Calibration (CALIBRATE state)
     this._calibProgress = 0;   // 0 → 1 (fills as finger is held steady)
@@ -143,6 +151,7 @@ class Game {
     this._fingerPos          = null;
     this.aimAngle = 0;
     this.aimPower = 0;
+    this._resetAimLock();
     this.state = 'PLAYING';
   }
 
@@ -330,6 +339,54 @@ class Game {
   }
 
   // ── Camera aiming (PLAYING state) ─────────────────────────────────────────
+  _resetAimLock() {
+    this._aimLocked = false;
+    this._aimLockPos = null;
+    this._aimLockStartedAt = 0;
+    this._aimLockProgress = 0;
+    this._aimLockAngle = this.aimAngle || 0;
+  }
+
+  _updateAimLock(fp, now) {
+    if (!fp) {
+      this._resetAimLock();
+      return;
+    }
+
+    if (this._aimLocked) {
+      this.aimAngle = this._aimLockAngle;
+      return;
+    }
+
+    if (!this._aimLockPos) {
+      this._aimLockPos = { x: fp.x, y: fp.y };
+      this._aimLockStartedAt = now;
+      this._aimLockProgress = 0;
+      return;
+    }
+
+    const drift = Math.hypot(fp.x - this._aimLockPos.x, fp.y - this._aimLockPos.y);
+    if (drift > AIM_LOCK_MOVE_TOLERANCE) {
+      this._aimLockPos = { x: fp.x, y: fp.y };
+      this._aimLockStartedAt = now;
+      this._aimLockProgress = 0;
+      return;
+    }
+
+    this._aimLockProgress = Utils.clamp(
+      (now - this._aimLockStartedAt) / AIM_LOCK_HOLD_MS,
+      0,
+      1,
+    );
+
+    if (this._aimLockProgress >= 1) {
+      this._aimLocked = true;
+      this._aimLockPos = { x: fp.x, y: fp.y };
+      this._aimLockAngle = this.aimAngle;
+      this._fingerRippleT = 0;
+    }
+  }
+
   _processCameraInput() {
     if (!this.camera.enabled) return;
     const W = this.canvas.width, H = this.canvas.height;
@@ -346,19 +403,29 @@ class Game {
         this._fingerRippleT      = 0;
       }
 
-      // Aim = direction from finger toward ball
-      this.aimAngle = Utils.angle(fp.x, fp.y, this.cueBall.x, this.cueBall.y);
-      this.camera.setAimAngle(this.aimAngle);
-      this.camera.updateStroke(this.aimAngle);
+      if (!this._aimLocked) {
+        // Aim = direction from palm toward ball until the palm has held steady.
+        this.aimAngle = Utils.angle(fp.x, fp.y, this.cueBall.x, this.cueBall.y);
+      }
+      this._updateAimLock(fp, performance.now());
+
+      const effectiveAngle = this._aimLocked ? this._aimLockAngle : this.aimAngle;
+      this.aimAngle = effectiveAngle;
+      this.camera.setAimAngle(effectiveAngle);
+      this.camera.updateStroke(effectiveAngle);
 
       // Pullback from axial retreat
       this.pullback = this.camera.getPullback();
       this.aimPower = this.pullback / CONFIG.CUE_MAX_PULLBACK;
 
-      // Shot: fast forward thrust after meaningful pullback
+      // Shot: fist close or fast forward thrust after meaningful pullback
       const shotPower = this.camera.detectShot();
-      if (shotPower !== null) this._fireShot(this.aimAngle, shotPower);
+      if (shotPower !== null && this._aimLocked) {
+        this._fireShot(effectiveAngle, shotPower);
+        this._resetAimLock();
+      }
     } else {
+      this._resetAimLock();
       this.camera.setAimAngle(this.aimAngle);
     }
   }
@@ -439,7 +506,8 @@ class Game {
     // Cue stick
     if (canAim) {
       // Camera mode: pass fingerPos so cue grip is AT the finger
-      const gripPos = (this.camera.enabled && this._fingerPos) ? this._fingerPos : null;
+      const aimControlPos = this._aimLocked && this._aimLockPos ? this._aimLockPos : this._fingerPos;
+      const gripPos = (this.camera.enabled && aimControlPos) ? aimControlPos : null;
       r.drawCue(this.cueBall, this.aimAngle, this.pullback, gripPos);
       if (this.aimPower > 0.02) r.drawPowerArc(this.cueBall, this.aimAngle, this.aimPower);
     }
@@ -457,10 +525,12 @@ class Game {
 
       // Guide (waiting / flash)
       r.drawCameraGuide(!!this._fingerPos, this._fingerEverDetected,
-                        this._fingerDetectedAt, this.animT, W, H);
+                        this._fingerDetectedAt, this.animT, W, H,
+                        this._aimLockProgress, this._aimLocked);
 
       // Finger cursor
-      if (this._fingerPos) r.drawFingerCursor(this._fingerPos, this._fingerRippleT);
+      const cursorPos = this._aimLocked && this._aimLockPos ? this._aimLockPos : this._fingerPos;
+      if (cursorPos) r.drawFingerCursor(cursorPos, this._fingerRippleT, this._aimLocked);
     }
 
     if (this.state === 'PLAYING') {

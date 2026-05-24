@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_NAME = 'onefinger-v3';
+const CACHE_NAME = 'onefinger-v4';
 const ASSETS = [
   './',
   './index.html',

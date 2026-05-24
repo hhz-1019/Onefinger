@@ -455,7 +455,7 @@ class Renderer {
 
     // Decorative table preview (mini)
     ctx.save();
-    const tw = W * 0.7, th = tw * 0.55;
+    const tw = Math.min(W * 0.7, 900), th = tw * 0.55;
     const tx = (W - tw) / 2, ty = H * 0.28;
     ctx.fillStyle = '#2e8040';
     ctx.fillRect(tx, ty, tw, th);
@@ -484,17 +484,17 @@ class Renderer {
     // Glow effect
     ctx.shadowColor = 'rgba(46,128,64,0.8)';
     ctx.shadowBlur = 30;
-    ctx.font = `bold ${Math.round(W * 0.12)}px "PingFang SC", "Microsoft YaHei", Arial`;
+    ctx.font = `bold ${Math.min(112, Math.round(W * 0.12))}px "PingFang SC", "Microsoft YaHei", Arial`;
     ctx.fillStyle = '#e8d5a3';
     ctx.fillText('一指清台', W / 2, H * 0.13);
     ctx.shadowBlur = 0;
-    ctx.font = `${Math.round(W * 0.04)}px "PingFang SC", Arial`;
+    ctx.font = `${Math.min(34, Math.round(W * 0.04))}px "PingFang SC", Arial`;
     ctx.fillStyle = 'rgba(200,200,200,0.7)';
     ctx.fillText('隔空击球  台球对决', W / 2, H * 0.2);
     ctx.restore();
 
     // Start button
-    const btnW = W * 0.55, btnH = 54;
+    const btnW = Math.min(W * 0.55, 720), btnH = 54;
     const btnX = (W - btnW) / 2, btnY = H * 0.72;
     ctx.save();
     const btnGrd = ctx.createLinearGradient(btnX, btnY, btnX, btnY + btnH);
@@ -510,7 +510,7 @@ class Renderer {
     ctx.lineWidth = 1.5;
     ctx.stroke();
     ctx.shadowBlur = 0;
-    ctx.font = `bold ${Math.round(W * 0.06)}px "PingFang SC", Arial`;
+    ctx.font = `bold ${Math.min(46, Math.round(W * 0.06))}px "PingFang SC", Arial`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = '#fff';
@@ -519,11 +519,11 @@ class Renderer {
 
     // Instructions
     ctx.save();
-    ctx.font = `${Math.round(W * 0.034)}px "PingFang SC", Arial`;
+    ctx.font = `${Math.min(24, Math.round(W * 0.034))}px "PingFang SC", Arial`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = 'rgba(180,180,180,0.7)';
-    ctx.fillText('张开手掌瞄准  握拳击球  或直接触摸拖拽', W / 2, H * 0.84);
+    ctx.fillText('停稳手掌锁定瞄准  握拳击球  或直接触摸拖拽', W / 2, H * 0.84);
     ctx.fillText(`限时 ${CONFIG.TIME_LIMIT} 秒  用最少杆数清台`, W / 2, H * 0.89);
     ctx.restore();
 
@@ -599,7 +599,7 @@ class Renderer {
    * @param {Object} pos       - {x, y} screen position
    * @param {number} rippleT   - 0→1 ripple animation progress (0 = just detected)
    */
-  drawFingerCursor(pos, rippleT = 1) {
+  drawFingerCursor(pos, rippleT = 1, locked = false) {
     if (!pos) return;
     const ctx = this.ctx;
 
@@ -610,9 +610,13 @@ class Renderer {
       ctx.save();
       ctx.beginPath();
       ctx.arc(pos.x, pos.y, ringR, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(80,255,140,${ringA})`;
+      ctx.strokeStyle = locked
+        ? `rgba(80,210,255,${ringA})`
+        : `rgba(80,255,140,${ringA})`;
       ctx.lineWidth = 3 * (1 - rippleT);
-      ctx.shadowColor = `rgba(80,255,140,${ringA * 0.8})`;
+      ctx.shadowColor = locked
+        ? `rgba(80,210,255,${ringA * 0.8})`
+        : `rgba(80,255,140,${ringA * 0.8})`;
       ctx.shadowBlur  = 12;
       ctx.stroke();
       ctx.restore();
@@ -621,9 +625,9 @@ class Renderer {
     ctx.save();
     // Glow
     const grd = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, 28);
-    grd.addColorStop(0,   'rgba(255,220,80,0.75)');
-    grd.addColorStop(0.5, 'rgba(255,180,40,0.35)');
-    grd.addColorStop(1,   'rgba(255,180,40,0)');
+    grd.addColorStop(0,   locked ? 'rgba(90,210,255,0.8)' : 'rgba(255,220,80,0.75)');
+    grd.addColorStop(0.5, locked ? 'rgba(70,170,255,0.36)' : 'rgba(255,180,40,0.35)');
+    grd.addColorStop(1,   locked ? 'rgba(70,170,255,0)' : 'rgba(255,180,40,0)');
     ctx.beginPath();
     ctx.arc(pos.x, pos.y, 28, 0, Math.PI * 2);
     ctx.fillStyle = grd;
@@ -631,7 +635,7 @@ class Renderer {
     // Outer ring
     ctx.beginPath();
     ctx.arc(pos.x, pos.y, 14, 0, Math.PI * 2);
-    ctx.strokeStyle = 'rgba(255,220,80,0.9)';
+    ctx.strokeStyle = locked ? 'rgba(110,220,255,0.95)' : 'rgba(255,220,80,0.9)';
     ctx.lineWidth = 2;
     ctx.stroke();
     // Dot centre
@@ -651,7 +655,7 @@ class Renderer {
    * @param {number}  animT          - global animation time (seconds)
    * @param {number}  W, H           - canvas dimensions
    */
-  drawCameraGuide(fingerPresent, everDetected, detectedAt, animT, W, H) {
+  drawCameraGuide(fingerPresent, everDetected, detectedAt, animT, W, H, lockProgress = 0, aimLocked = false) {
     const ctx = this.ctx;
     const now = performance.now();
 
@@ -695,14 +699,14 @@ class Renderer {
 
       // Text
       ctx.save();
-      ctx.font = `${Math.round(W * 0.037)}px "PingFang SC", Arial`;
+      ctx.font = `${Math.min(16, Math.round(W * 0.037))}px "PingFang SC", Arial`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = '#c8e8ff';
       ctx.fillText('请将手掌举在摄像头前方', W / 2 + 14, pillY + pillH * 0.38);
-      ctx.font = `${Math.round(W * 0.028)}px "PingFang SC", Arial`;
+      ctx.font = `${Math.min(12, Math.round(W * 0.028))}px "PingFang SC", Arial`;
       ctx.fillStyle = 'rgba(160,210,255,0.7)';
-      ctx.fillText('移动手掌瞄准，握拳即可击球', W / 2 + 14, pillY + pillH * 0.7);
+      ctx.fillText('停稳 2 秒锁定瞄准，锁定后握拳击球', W / 2 + 14, pillY + pillH * 0.7);
       ctx.restore();
       return;
     }
@@ -753,6 +757,53 @@ class Renderer {
     }
 
     // ── 3. Active state: ripple ring at finger cursor position ─────────────
+    if (fingerPresent) {
+      const pillW = Math.min(W * 0.82, 360);
+      const pillH = 58;
+      const pillX = (W - pillW) / 2;
+      const pillY = H - pillH - 28;
+      const progress = Utils.clamp(lockProgress, 0, 1);
+      const pulse = Math.sin(animT * 4) * 0.5 + 0.5;
+
+      ctx.save();
+      ctx.shadowColor = aimLocked ? 'rgba(80,220,255,0.45)' : 'rgba(255,210,90,0.32)';
+      ctx.shadowBlur = aimLocked ? 22 : 14 + pulse * 6;
+      const pillGrd = ctx.createLinearGradient(pillX, pillY, pillX, pillY + pillH);
+      pillGrd.addColorStop(0, aimLocked ? 'rgba(20,70,95,0.92)' : 'rgba(58,45,20,0.9)');
+      pillGrd.addColorStop(1, aimLocked ? 'rgba(9,36,56,0.95)' : 'rgba(34,25,12,0.94)');
+      ctx.beginPath();
+      ctx.roundRect(pillX, pillY, pillW, pillH, pillH / 2);
+      ctx.fillStyle = pillGrd;
+      ctx.fill();
+      ctx.strokeStyle = aimLocked ? 'rgba(110,230,255,0.5)' : 'rgba(255,220,120,0.38)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      const barX = pillX + 24;
+      const barY = pillY + pillH - 13;
+      const barW = pillW - 48;
+      ctx.beginPath();
+      ctx.roundRect(barX, barY, barW, 4, 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.16)';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.roundRect(barX, barY, barW * (aimLocked ? 1 : progress), 4, 2);
+      ctx.fillStyle = aimLocked ? '#72dcff' : '#ffd76a';
+      ctx.fill();
+      ctx.restore();
+
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = `bold ${Math.min(16, Math.round(W * 0.036))}px "PingFang SC", Arial`;
+      ctx.fillStyle = aimLocked ? '#bff4ff' : '#fff2c8';
+      ctx.fillText(aimLocked ? '瞄准已锁定' : '停稳 2 秒锁定瞄准', W / 2, pillY + 22);
+      ctx.font = `${Math.min(13, Math.round(W * 0.026))}px "PingFang SC", Arial`;
+      ctx.fillStyle = aimLocked ? 'rgba(190,240,255,0.72)' : 'rgba(255,236,190,0.72)';
+      ctx.fillText(aimLocked ? '握拳击球' : '锁定后握拳击球', W / 2, pillY + 40);
+      ctx.restore();
+    }
+
     // (handled in drawFingerCursor; tiny status dot in corner shown in HUD)
   }
 
@@ -937,7 +988,7 @@ class Renderer {
     ctx.textBaseline = 'middle';
     ctx.font         = `${Math.round(W * 0.03)}px "PingFang SC", Arial`;
     ctx.fillStyle    = 'rgba(140,160,180,0.55)';
-    ctx.fillText('识别后自动进入游戏  ·  移动手掌瞄准  ·  握拳击球', W / 2, H * 0.9);
+    ctx.fillText('识别后自动进入游戏  ·  停稳 2 秒锁定瞄准  ·  握拳击球', W / 2, H * 0.9);
     ctx.restore();
   }
 
