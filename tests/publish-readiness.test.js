@@ -36,5 +36,6 @@ assert.ok(exists('.github/workflows/pages.yml'), 'GitHub Pages workflow is requi
 const workflow = read('.github/workflows/pages.yml');
 assert.match(workflow, /actions\/upload-pages-artifact/, 'workflow must upload a Pages artifact');
 assert.match(workflow, /actions\/deploy-pages/, 'workflow must deploy to GitHub Pages');
+assert.match(workflow, /enablement:\s*true/, 'workflow must enable Pages for first-time deployment');
 
 console.log('ok - publish readiness');
